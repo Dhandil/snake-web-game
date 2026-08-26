@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>贪吃蛇</title>
+  <style>
+    /* 基础样式；响应式与触屏细节为 T3 范围 */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0b1120;
+      color: #e2e8f0;
+      font-family: system-ui, "Microsoft YaHei", sans-serif;
+      overscroll-behavior: none;   /* 防下拉刷新（B-10） */
+    }
+    .wrap { width: min(92vmin, 520px); padding: 12px 0; }
+    header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 0 4px 10px;
+    }
+    h1 { font-size: 22px; letter-spacing: 2px; }
+    .hud { font-size: 16px; color: #94a3b8; }
+    .hud b { color: #5eead4; font-size: 20px; margin-left: 4px; }
+    .header-right { display: flex; align-items: center; gap: 12px; }
+    .mute-btn {
+      background: none;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 2px;
+      line-height: 1;
+    }
+    .stage { position: relative; }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1 / 1;        /* B-11：显式方形 */
+      touch-action: none;          /* B-10：触摸画布不滚动/缩放/下拉 */
+      border-radius: 10px;
+    }
+    .action-btn {
+      position: absolute;
+      left: 50%;
+      bottom: 18%;
+      transform: translateX(-50%);
+      padding: 10px 26px;
+      font-size: 16px;
+      color: #06281f;
+      background: #5eead4;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .action-btn:hover { filter: brightness(1.08); }
+    /* 十字虚拟按键：仅触控设备显示（pointer: coarse 或 JS has-touch 兜底） */
+    .dpad {
+      display: none;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(2, 64px);
+      gap: 10px;
+      justify-content: center;
+      margin-top: 16px;
+      touch-action: none;          /* B-10：按键区阻断默认手势 */
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .dpad-btn {
+      width: 64px;
+      height: 64px;
+      font-size: 22px;
+      color: #cbd5e1;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad-btn:active { background: #334155; }
+    .dpad .up    { grid-column: 2; grid-row: 1; }
+    .dpad .left  { grid-column: 1; grid-row: 2; }
+    .dpad .down  { grid-column: 2; grid-row: 2; }
+    .dpad .right { grid-column: 3; grid-row: 2; }
+    @media (pointer: coarse) {
+      .dpad { display: grid; }
+    }
+    .help {
+      padding-top: 10px;
+      text-align: center;
+      font-size: 12px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>贪吃蛇</h1>
+      <div class="header-right">
+        <div class="hud">得分<b id="score">0</b><span id="highscore-wrap"> · 最高<b id="highscore">0</b></span></div>
+        <button id="mute-btn" class="mute-btn" type="button" aria-label="静音">🔊</button>
+      </div>
+    </header>
+    <div class="stage">
+      <canvas id="board" width="600" height="600"></canvas>
+      <button id="action-btn" class="action-btn" type="button">开始游戏</button>
+    </div>
+    <div class="dpad" id="dpad">
+      <button class="dpad-btn up" data-dir="up" type="button" tabindex="-1" aria-label="向上">▲</button>
+      <button class="dpad-btn left" data-dir="left" type="button" tabindex="-1" aria-label="向左">◀</button>
+      <button class="dpad-btn down" data-dir="down" type="button" tabindex="-1" aria-label="向下">▼</button>
+      <button class="dpad-btn right" data-dir="right" type="button" tabindex="-1" aria-label="向右">▶</button>
+    </div>
+    <footer class="help">方向键 / WASD 移动 · 空格或 P 暂停 · 回车 开始 / 重开 · M 静音</footer>
+  </main>
+
+  <!-- ADR-001：file:// 兼容要求经典脚本按依赖顺序加载，禁用 type="module" -->
+  <script src="src/config.js"></script>
+  <script src="src/storage.js"></script>
+  <script src="src/audio.js"></script>
+  <script src="src/engine.js"></script>
+  <script src="src/render.js"></script>
+  <script src="src/ui.js"></script>
+  <script src="src/input.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>
