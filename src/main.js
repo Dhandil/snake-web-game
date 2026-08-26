@@ -47,7 +47,9 @@
   document.addEventListener('touchstart', unlockAudio, { passive: true });
 
   SG.initInput(document, {
-    onDirection: function (d) { engine.queueDirection(d); },
+    onDirection: function (d) {
+      if (engine.queueDirection(d)) renderer.flashHead();   // B-14：仅被接受的输入给反馈
+    },
     onPauseToggle: function () { ui.togglePause(); syncPlayButtons(); },
     onConfirm: function () { ui.confirmAction(); syncPlayButtons(); },
     onMuteToggle: function () {
@@ -100,5 +102,5 @@
   requestAnimationFrame(frame);
 
   /* 调试/验收句柄：供控制台核验（不影响游戏逻辑）；tick 供后台标签下的自动化验证 */
-  window.__snake = { engine: engine, ui: ui, audio: audio, tick: tick };
+  window.__snake = { engine: engine, ui: ui, audio: audio, tick: tick, renderer: renderer };
 })();

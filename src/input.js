@@ -53,9 +53,21 @@
 
     dpad.addEventListener('touchstart', function (e) {
       e.preventDefault();   // 必须 passive:false 才能生效
-      var d = dirFromEvent(e);
-      if (d) handlers.onDirection(d);
+      var btn = e.target.closest('.dpad-btn');
+      if (btn) {
+        btn.classList.add('pressed');   // B-15 按压态（preventDefault 会抑制 :active，用类补齐）
+        var d = dirFromEvent(e);
+        if (d) handlers.onDirection(d);
+      }
     }, { passive: false });
+
+    /* 按压态清除（B-15） */
+    function clearPressed(e) {
+      var btn = e.target.closest('.dpad-btn');
+      if (btn) btn.classList.remove('pressed');
+    }
+    dpad.addEventListener('touchend', clearPressed);
+    dpad.addEventListener('touchcancel', clearPressed);
 
     /* 桌面 mouse 兜底（混合设备/调试）；touchstart 的 preventDefault 会吞掉后续合成 click */
     dpad.addEventListener('click', function (e) {

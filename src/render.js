@@ -7,8 +7,14 @@
     var ctx = canvas.getContext('2d');
     var N = cfg.BOARD_SIZE;
     var C = cfg.COLORS;
+    var flashUntil = 0;   // B-14 瞬态：高亮截止时间戳（render 内部，不进引擎状态）
 
     function cell() { return canvas.width / N; }
+
+    /* B-14 输入即时反馈：被接受的方向输入触发蛇头短暂高亮 */
+    function flashHead() {
+      flashUntil = performance.now() + (cfg.HEAD_FLASH_MS || 120);
+    }
 
     function drawBoard() {
       ctx.fillStyle = C.bg;
@@ -22,6 +28,10 @@
         ctx.moveTo(0, i * s); ctx.lineTo(canvas.width, i * s);
         ctx.stroke();
       }
+      // B-13 内沿警示线：精确贴合死亡边界（最外圈格子的外边缘）
+      ctx.strokeStyle = C.warningRing;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
     }
 
     function roundRect(x, y, w, h, r) {
@@ -48,6 +58,16 @@
         ctx.fillStyle = idx === 0 ? C.snakeHead : (state.over ? C.snakeDead : C.snakeBody);
         roundRect(seg.x * s + 1.5, seg.y * s + 1.5, s - 3, s - 3, Math.max(3, s * 0.18));
       });
+
+      // B-14 蛇头高亮渐隐（仅高亮存活蛇头；渐变透明度随剩余时间衰减）
+      var nowMs = performance.now();
+      if (nowMs < flashUntil && state.snake.length) {
+        ctx.globalAlpha = (flashUntil - nowMs) / (cfg.HEAD_FLASH_MS || 120);
+        ctx.fillStyle = C.headFlash;
+        var hd = state.snake[0];
+        roundRect(hd.x * s + 1.5, hd.y * s + 1.5, s - 3, s - 3, Math.max(3, s * 0.18));
+        ctx.globalAlpha = 1;
+      }
     }
 
     /* 遮罩画面：kind = 'ready' | 'paused' | 'over' | 'win'；data.lines 为补充文案 */
@@ -77,7 +97,7 @@
       });
     }
 
-    return { drawScene: drawScene, drawOverlay: drawOverlay };
+    return { drawScene: drawScene, drawOverlay: drawOverlay, flashHead: flashHead };
   }
 
   window.SnakeGame.createRenderer = createRenderer;

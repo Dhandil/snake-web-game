@@ -43,7 +43,9 @@
       height: auto;
       aspect-ratio: 1 / 1;        /* B-11：显式方形 */
       touch-action: none;          /* B-10：触摸画布不滚动/缩放/下拉 */
+      border: 2px solid #4a5d82;   /* B-13 画布描边（与 config.COLORS.borderColor 一致，D8-A） */
       border-radius: 10px;
+      box-sizing: border-box;
     }
     .action-btn {
       position: absolute;
@@ -81,8 +83,10 @@
       border-radius: 14px;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
+      transition: transform 0.08s ease-out;   /* B-15 按压回弹 */
     }
-    .dpad-btn:active { background: #334155; }
+    .dpad-btn:active,
+    .dpad-btn.pressed { transform: scale(0.92); background: #334155; }
     .dpad .up    { grid-column: 2; grid-row: 1; }
     .dpad .left  { grid-column: 1; grid-row: 2; }
     .dpad .down  { grid-column: 2; grid-row: 2; }

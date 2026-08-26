@@ -46,12 +46,15 @@
       return true;
     }
 
-    /* 反向/同向过滤以「最后排队方向」为基准，保证快速连按两键可按序生效（B-01 场景 3） */
+    /* 反向/同向过滤以「最后排队方向」为基准，保证快速连按两键可按序生效（B-01 场景 3）。
+       返回值（FREEZE-P2 允许的唯一接口扩展）：true=已入队（供 B-14 即时反馈），false=被拒绝。 */
     function queueDirection(d) {
-      if (!state || state.over || state.win) return;
+      if (!state || state.over || state.win) return false;
       var base = state.pending.length ? state.pending[state.pending.length - 1] : state.dir;
-      if ((d.x === -base.x && d.y === -base.y) || (d.x === base.x && d.y === base.y)) return;
-      if (state.pending.length < 3) state.pending.push({ x: d.x, y: d.y });
+      if ((d.x === -base.x && d.y === -base.y) || (d.x === base.x && d.y === base.y)) return false;
+      if (state.pending.length >= 3) return false;
+      state.pending.push({ x: d.x, y: d.y });
+      return true;
     }
 
     function die(events) {
