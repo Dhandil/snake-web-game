@@ -29,6 +29,16 @@
     },
     DEFAULT_DIFFICULTY: 'normal',
 
+    /* B-18 特效与震动（T9） */
+    EFFECTS: {
+      PARTICLE_COUNT: 8,          // 每次爆发粒子数（规格 6~10 取中值）
+      PARTICLE_LIFE_MS: 450,      // 粒子寿命 ≤0.5s
+      FLOAT_TEXT_LIFE_MS: 600,    // 飘字寿命 ≤0.6s
+      FLOAT_TEXT_RISE_PX: 26,     // 飘字上浮距离
+      MAX_PARTICLES: 200,         // 泄漏保护上限
+      VIBRATE: { eat: 20, goldeat: 40, gameover: 80 }
+    },
+
     /* 视觉样式（D8-A 边界三件套调整：底色提亮拉开对比 + 新增描边/警示线/反馈色） */
     COLORS: {
       bg: '#22304f',                              // 棋盘底色（原 #101828，与页面 #0b1120 拉开对比）

@@ -71,6 +71,13 @@
   syncPlayButtons();
   syncDiffPicker();
 
+  /* B-18 震动：仅支持震动的平台生效（守卫 + 异常保护） */
+  function buzz(ms) {
+    if (navigator.vibrate) {
+      try { navigator.vibrate(ms); } catch (e) { /* 震动失败不干扰游戏 */ }
+    }
+  }
+
   /* 自动播放策略解锁：任意首次用户手势（B-12 前提） */
   function unlockAudio() { audio.unlock(); }
   document.addEventListener('pointerdown', unlockAudio);
@@ -111,12 +118,26 @@
     while (ui.getPhase() === 'RUNNING' && acc >= engine.getState().intervalMs && guard++ < 10) {
       acc -= engine.getState().intervalMs;
       var events = engine.step(now);   // B-16：注入真实时钟供金色食物超时判定
-      /* B-12：引擎事件 → 音效（'speedup' 不单独配音，三类范围） */
-      events.forEach(function (ev) {
-        if (ev === 'eat') audio.play('eat');
-        if (ev === 'goldeat') audio.play('goldeat');
-      });
       var st = engine.getState();
+      /* B-12 + B-18：引擎事件 → 音效/特效/震动 */
+      events.forEach(function (ev) {
+        if (ev === 'eat') {
+          renderer.burstAtCell(st.snake[0], SG.config.COLORS.food);       // 爆发位置=新蛇头格（step 内食物已重刷）
+          renderer.floatTextAtCell(st.snake[0], '+10', '#f8fafc');
+          buzz(SG.config.EFFECTS.VIBRATE.eat);
+          audio.play('eat');
+        }
+        if (ev === 'goldeat') {
+          renderer.burstAtCell(st.snake[0], SG.config.COLORS.foodGold);
+          renderer.floatTextAtCell(st.snake[0], '+20', SG.config.COLORS.foodGold);
+          buzz(SG.config.EFFECTS.VIBRATE.goldeat);
+          audio.play('goldeat');
+        }
+        if (ev === 'gameover') {
+          renderer.burstAtCell(st.snake[0], '#ef4444');
+          buzz(SG.config.EFFECTS.VIBRATE.gameover);
+        }
+      });
       if (st.over) { var rec = ui.endGame(); audio.play(rec ? 'newrecord' : 'gameover'); break; }
       if (st.win) { var rec2 = ui.winGame(); audio.play(rec2 ? 'newrecord' : 'gameover'); break; }
     }

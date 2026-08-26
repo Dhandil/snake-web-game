@@ -8,12 +8,72 @@
     var N = cfg.BOARD_SIZE;
     var C = cfg.COLORS;
     var flashUntil = 0;   // B-14 瞬态：高亮截止时间戳（render 内部，不进引擎状态）
+    var particles = [];   // B-18 瞬态粒子
+    var floats = [];      // B-18 瞬态飘字
 
     function cell() { return canvas.width / N; }
 
     /* B-14 输入即时反馈：被接受的方向输入触发蛇头短暂高亮 */
     function flashHead() {
       flashUntil = performance.now() + (cfg.HEAD_FLASH_MS || 120);
+    }
+
+    /* B-18 粒子爆发：pos 为格子坐标；render 内瞬态，不进引擎状态 */
+    function burstAtCell(pos, color) {
+      var s = cell();
+      var cx = (pos.x + 0.5) * s, cy = (pos.y + 0.5) * s;
+      var nowMs = performance.now();
+      for (var i = 0; i < cfg.EFFECTS.PARTICLE_COUNT; i++) {
+        if (particles.length >= cfg.EFFECTS.MAX_PARTICLES) particles.shift();
+        var ang = Math.random() * Math.PI * 2;
+        var spd = (0.4 + Math.random() * 0.8) * s * 2.2;   // px/s
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+          born: nowMs, life: cfg.EFFECTS.PARTICLE_LIFE_MS,
+          color: color, size: Math.max(2, s * 0.10)
+        });
+      }
+    }
+
+    /* B-18 分值飘字 */
+    function floatTextAtCell(pos, text, color) {
+      var s = cell();
+      floats.push({
+        x: (pos.x + 0.5) * s, y: (pos.y + 0.5) * s,
+        text: text, born: performance.now(), life: cfg.EFFECTS.FLOAT_TEXT_LIFE_MS,
+        color: color
+      });
+      if (floats.length > 12) floats.shift();
+    }
+
+    /* 绘制并清理过期特效（age 比例渐隐；飘字上浮） */
+    function drawEffects(nowMs) {
+      var s = cell();
+      var i, p, age, k;
+      for (i = particles.length - 1; i >= 0; i--) {
+        p = particles[i];
+        age = nowMs - p.born;
+        if (age > p.life) { particles.splice(i, 1); continue; }
+        k = 1 - age / p.life;
+        ctx.globalAlpha = k;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x + p.vx * (age / 1000) - p.size / 2,
+                     p.y + p.vy * (age / 1000) - p.size / 2,
+                     p.size, p.size);
+      }
+      for (i = floats.length - 1; i >= 0; i--) {
+        var f = floats[i];
+        age = nowMs - f.born;
+        if (age > f.life) { floats.splice(i, 1); continue; }
+        k = 1 - age / f.life;
+        ctx.globalAlpha = k;
+        ctx.fillStyle = f.color;
+        ctx.font = 'bold ' + Math.max(14, Math.round(s * 0.55)) + 'px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(f.text, f.x, f.y - cfg.EFFECTS.FLOAT_TEXT_RISE_PX * (age / f.life));
+      }
+      ctx.globalAlpha = 1;
     }
 
     function drawBoard() {
@@ -84,9 +144,11 @@
         ctx.globalAlpha = (flashUntil - nowMs) / (cfg.HEAD_FLASH_MS || 120);
         ctx.fillStyle = C.headFlash;
         var hd = state.snake[0];
-        roundRect(hd.x * s + 1.5, hd.y * s + 1.5, s - 3, s - 3, Math.max(3, s * 0.18));
+        roundRect(hd.x * s + 1.5, hd.y *s + 1.5, s - 3, s - 3, Math.max(3, s * 0.18));
         ctx.globalAlpha = 1;
       }
+
+      drawEffects(nowMs);   // B-18 粒子与飘字（画在遮罩之下）
     }
 
     /* 遮罩画面：kind = 'ready' | 'paused' | 'over' | 'win'；data.lines 为补充文案 */
@@ -116,7 +178,13 @@
       });
     }
 
-    return { drawScene: drawScene, drawOverlay: drawOverlay, flashHead: flashHead };
+    return {
+      drawScene: drawScene,
+      drawOverlay: drawOverlay,
+      flashHead: flashHead,
+      burstAtCell: burstAtCell,
+      floatTextAtCell: floatTextAtCell
+    };
   }
 
   window.SnakeGame.createRenderer = createRenderer;
