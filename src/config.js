@@ -9,13 +9,25 @@
     ACCELERATE_FACTOR: 0.9,    // 间隔 ×0.9（约 -10%）
     MIN_INTERVAL_MS: 60,       // 间隔下限
     SCORE_PER_FOOD: 10,        // 每次进食得分
+    SCORE_GOLD: 20,            // 金色食物得分（B-16）
+    GOLD_EVERY_NORMAL: 5,      // 每吃 5 个普通食物后，下一个必为金色
+    GOLD_FOOD_MS: 5000,        // 金色食物存活时长（超时刷为普通）
     INITIAL_SNAKE_LEN: 3,
 
-    /* localStorage 键名（storage.js 使用；snake.muted 消费方为 T4 音效） */
+    /* localStorage 键名（storage.js 使用） */
     STORAGE_KEYS: {
       highScore: 'snake.highScore',
-      muted: 'snake.muted'
+      muted: 'snake.muted',
+      difficulty: 'snake.difficulty'   // B-17 难度偏好
     },
+
+    /* B-17 难度三档（D9-③ 节奏微调吸收于标准档 150→140）；加速曲线不变 */
+    DIFFICULTIES: {
+      slow:   { label: '慢',   intervalMs: 180 },
+      normal: { label: '标准', intervalMs: 140 },
+      fast:   { label: '快',   intervalMs: 110 }
+    },
+    DEFAULT_DIFFICULTY: 'normal',
 
     /* 视觉样式（D8-A 边界三件套调整：底色提亮拉开对比 + 新增描边/警示线/反馈色） */
     COLORS: {
@@ -28,6 +40,8 @@
       snakeBody: '#34d399',
       snakeDead: '#64748b',
       food: '#f97316',
+      foodGold: '#fbbf24',                        // B-16 金色食物本体
+      foodGoldRing: 'rgba(253, 224, 71, 0.95)',   // 倒计时环
       overlayMask: 'rgba(8, 12, 22, 0.72)',
       overlayTitle: '#f8fafc',
       overlayText: '#cbd5e1'

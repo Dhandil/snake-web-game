@@ -49,10 +49,29 @@
       drawBoard();
       var s = cell();
       if (state.food) {
-        ctx.fillStyle = C.food;
-        ctx.beginPath();
-        ctx.arc((state.food.x + 0.5) * s, (state.food.y + 0.5) * s, s * 0.34, 0, Math.PI * 2);
-        ctx.fill();
+        var fx = (state.food.x + 0.5) * s, fy = (state.food.y + 0.5) * s;
+        if (state.foodIsGold) {
+          // B-16 金色食物：本体 + 倒计时环（剩余时间比例画弧，顶部起点顺时针）
+          ctx.fillStyle = C.foodGold;
+          ctx.beginPath();
+          ctx.arc(fx, fy, s * 0.34, 0, Math.PI * 2);
+          ctx.fill();
+          var remain = 1;
+          if (state.goldExpiresAt) {
+            remain = Math.max(0, Math.min(1,
+              (state.goldExpiresAt - performance.now()) / (cfg.GOLD_FOOD_MS || 0.0001)));
+          }
+          ctx.strokeStyle = C.foodGoldRing;
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(fx, fy, s * 0.46, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * remain);
+          ctx.stroke();
+        } else {
+          ctx.fillStyle = C.food;
+          ctx.beginPath();
+          ctx.arc(fx, fy, s * 0.34, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       state.snake.forEach(function (seg, idx) {
         ctx.fillStyle = idx === 0 ? C.snakeHead : (state.over ? C.snakeDead : C.snakeBody);

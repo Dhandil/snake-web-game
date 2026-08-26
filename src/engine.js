@@ -15,6 +15,9 @@
         dir: { x: 1, y: 0 },
         pending: [],       // 方向意图队列：一步弹出一个，支持一步内连续转向
         food: null,
+        foodIsGold: false,     // B-16 金色限时食物
+        goldExpiresAt: 0,      // 由 step(now) 注入的真实时钟
+        normalSinceGold: 0,    // 距上次金色已吃的普通食物数
         score: 0,
         eaten: 0,
         intervalMs: cfg.INITIAL_INTERVAL_MS,
@@ -39,10 +42,15 @@
       return cells;
     }
 
-    function spawnFood() {
+    /* now：由 step(now) 注入的真实时钟（ms）。reset 阶段无时钟且计数为 0，永不生成金色。 */
+    function spawnFood(now) {
       var cells = freeCells();
       if (cells.length === 0) return false; // 满格兜底：由 step 判 WIN
+      var gold = state.normalSinceGold >= cfg.GOLD_EVERY_NORMAL && now !== undefined;
       state.food = cells[Math.floor(Math.random() * cells.length)];
+      state.foodIsGold = !!gold;
+      state.goldExpiresAt = gold ? now + cfg.GOLD_FOOD_MS : 0;
+      if (gold) state.normalSinceGold = 0;
       return true;
     }
 
@@ -63,10 +71,16 @@
       return events;   // DISC-001 修复：调用方依赖返回值（缺失曾致主循环冻结）
     }
 
-    /* 推进一步；返回事件数组：'eat' | 'speedup' | 'gameover' | 'win' */
-    function step() {
+    /* 推进一步；返回事件数组：'eat' | 'goldeat' | 'goldexpire' | 'speedup' | 'gameover' | 'win' */
+    function step(now) {
       var events = [];
       if (!state || state.over || state.win) return events;
+
+      // B-16 金色超时：先于移动判定，过期即刷新为普通食物（±1 步进精度）
+      if (state.foodIsGold && typeof now === 'number' && now >= state.goldExpiresAt) {
+        spawnFood(now);
+        events.push('goldexpire');
+      }
 
       if (state.pending.length) state.dir = state.pending.shift();
 
@@ -84,16 +98,22 @@
       var eating = state.food && nx === state.food.x && ny === state.food.y;
       state.snake.unshift({ x: nx, y: ny });
 
-      if (eating) {
-        state.score += cfg.SCORE_PER_FOOD;   // 计分（B-04）
-        state.eaten += 1;
-        events.push('eat');
+           if (eating) {
+        if (state.foodIsGold) {
+          state.score += cfg.SCORE_GOLD;          // 金色 +20（B-16）
+          events.push('goldeat');
+        } else {
+          state.score += cfg.SCORE_PER_FOOD;      // 普通 +10（B-04）
+          state.normalSinceGold += 1;
+          events.push('eat');
+        }
+        state.eaten += 1;                          // 金色同样计入加速计数（设计决定，见 T7 报告）
         if (state.eaten % cfg.ACCELERATE_EVERY === 0) {
           state.intervalMs = Math.max(cfg.MIN_INTERVAL_MS,
             Math.round(state.intervalMs * cfg.ACCELERATE_FACTOR)); // 加速（B-02）
           events.push('speedup');
         }
-        if (!spawnFood()) {
+        if (!spawnFood(now)) {
           state.win = true;                  // 无空闲格 → 安全终态（Spec Error/Edge）
           events.push('win');
         }

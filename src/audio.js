@@ -54,6 +54,10 @@
       eat: function () {
         tone(660, 990, 0.09, 'square', 0, 0.14);
       },
+      goldeat: function () {
+        tone(1047, 1568, 0.09, 'triangle', 0, 0.2);
+        tone(1568, 2093, 0.12, 'triangle', 0.09, 0.2);
+      },
       gameover: function () {
         tone(392, 196, 0.18, 'sawtooth', 0, 0.18);
         tone(220, 110, 0.3, 'sawtooth', 0.16, 0.18);

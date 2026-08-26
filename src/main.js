@@ -4,9 +4,17 @@
   var SG = window.SnakeGame;
 
   var canvas = document.getElementById('board');
-  var engine = SG.createEngine(SG.config);
-  var renderer = SG.createRenderer(canvas, SG.config);
   var storage = SG.createStorage(SG.config);
+
+  /* B-17 难度三档：组合根配置覆写（Object.create 派生，零 engine 改动） */
+  var DIFFS = SG.config.DIFFICULTIES;
+  var savedDiff = storage.get(SG.config.STORAGE_KEYS.difficulty);
+  var currentDiff = (savedDiff && DIFFS[savedDiff]) ? savedDiff : SG.config.DEFAULT_DIFFICULTY;
+  var engineCfg = Object.create(SG.config);
+  engineCfg.INITIAL_INTERVAL_MS = DIFFS[currentDiff].intervalMs;
+  var engine = SG.createEngine(engineCfg);
+
+  var renderer = SG.createRenderer(canvas, SG.config);
   var ui = SG.createUi(document, engine, renderer, SG.config, storage);
   var audio = SG.createAudio(SG.config, storage);
 
@@ -37,8 +45,31 @@
     restartBtn.hidden = !inPlay;
     pauseBtn.textContent = p === 'PAUSED' ? '▶' : '⏸';
     pauseBtn.setAttribute('aria-label', p === 'PAUSED' ? '继续' : '暂停');
+    syncDiffPicker();   // B-17 选择器仅 READY 可见，随阶段联动
+  }
+
+  /* B-17 难度选择器：仅 READY 态可见；点击即存偏好并生效于下一局 */
+  var diffPicker = document.getElementById('difficulty-picker');
+  var diffBtns = diffPicker ? diffPicker.querySelectorAll('.diff-btn') : [];
+  function syncDiffPicker() {
+    diffPicker.hidden = ui.getPhase() !== 'READY';
+    for (var i = 0; i < diffBtns.length; i++) {
+      diffBtns[i].classList.toggle('selected',
+        diffBtns[i].getAttribute('data-diff') === currentDiff);
+    }
+  }
+  for (var di = 0; di < diffBtns.length; di++) {
+    (function (btn) {
+      btn.addEventListener('click', function (e) {
+        currentDiff = e.currentTarget.getAttribute('data-diff');
+        engineCfg.INITIAL_INTERVAL_MS = DIFFS[currentDiff].intervalMs;
+        storage.set(SG.config.STORAGE_KEYS.difficulty, currentDiff);
+        syncDiffPicker();
+      });
+    })(diffBtns[di]);
   }
   syncPlayButtons();
+  syncDiffPicker();
 
   /* 自动播放策略解锁：任意首次用户手势（B-12 前提） */
   function unlockAudio() { audio.unlock(); }
@@ -79,10 +110,11 @@
     var guard = 0; // 后台标签页回来时 dt 可能很大，防止单帧补步过多
     while (ui.getPhase() === 'RUNNING' && acc >= engine.getState().intervalMs && guard++ < 10) {
       acc -= engine.getState().intervalMs;
-      var events = engine.step();
+      var events = engine.step(now);   // B-16：注入真实时钟供金色食物超时判定
       /* B-12：引擎事件 → 音效（'speedup' 不单独配音，三类范围） */
       events.forEach(function (ev) {
         if (ev === 'eat') audio.play('eat');
+        if (ev === 'goldeat') audio.play('goldeat');
       });
       var st = engine.getState();
       if (st.over) { var rec = ui.endGame(); audio.play(rec ? 'newrecord' : 'gameover'); break; }

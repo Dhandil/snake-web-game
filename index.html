@@ -100,6 +100,31 @@
       font-size: 12px;
       color: #64748b;
     }
+    /* B-17 难度选择器：仅 READY 态显示（main.js 控制 hidden） */
+    .difficulty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .difficulty[hidden] { display: none; }
+    .diff-label { font-size: 13px; color: #64748b; }
+    .diff-btn {
+      padding: 6px 16px;
+      font-size: 14px;
+      color: #94a3b8;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .diff-btn.selected {
+      color: #06281f;
+      background: #5eead4;
+      border-color: #5eead4;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -116,6 +141,12 @@
     <div class="stage">
       <canvas id="board" width="600" height="600"></canvas>
       <button id="action-btn" class="action-btn" type="button">开始游戏</button>
+    </div>
+    <div class="difficulty" id="difficulty-picker">
+      <span class="diff-label">难度</span>
+      <button class="diff-btn" data-diff="slow" type="button">慢</button>
+      <button class="diff-btn selected" data-diff="normal" type="button">标准</button>
+      <button class="diff-btn" data-diff="fast" type="button">快</button>
     </div>
     <div class="dpad" id="dpad">
       <button class="dpad-btn up" data-dir="up" type="button" tabindex="-1" aria-label="向上">▲</button>
