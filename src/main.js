@@ -22,6 +22,24 @@
   });
   syncMuteBtn();
 
+  /* 移动端暂停/重开（验收发现 F-1）：游戏中显示，随阶段切换图标 */
+  var pauseBtn = document.getElementById('pause-btn');
+  var restartBtn = document.getElementById('restart-btn');
+  pauseBtn.addEventListener('click', function () { ui.togglePause(); syncPlayButtons(); });
+  restartBtn.addEventListener('click', function () { ui.start(); syncPlayButtons(); });
+  var lastPhaseForBtns = null;
+  function syncPlayButtons() {
+    var p = ui.getPhase();
+    if (p === lastPhaseForBtns) return;
+    lastPhaseForBtns = p;
+    var inPlay = p === 'RUNNING' || p === 'PAUSED';
+    pauseBtn.hidden = !inPlay;
+    restartBtn.hidden = !inPlay;
+    pauseBtn.textContent = p === 'PAUSED' ? '▶' : '⏸';
+    pauseBtn.setAttribute('aria-label', p === 'PAUSED' ? '继续' : '暂停');
+  }
+  syncPlayButtons();
+
   /* 自动播放策略解锁：任意首次用户手势（B-12 前提） */
   function unlockAudio() { audio.unlock(); }
   document.addEventListener('pointerdown', unlockAudio);
@@ -30,8 +48,8 @@
 
   SG.initInput(document, {
     onDirection: function (d) { engine.queueDirection(d); },
-    onPauseToggle: function () { ui.togglePause(); },
-    onConfirm: function () { ui.confirmAction(); },
+    onPauseToggle: function () { ui.togglePause(); syncPlayButtons(); },
+    onConfirm: function () { ui.confirmAction(); syncPlayButtons(); },
     onMuteToggle: function () {
       audio.toggleMuted();
       syncMuteBtn();
@@ -71,6 +89,7 @@
     if (ui.getPhase() !== 'RUNNING') acc = 0;
 
     ui.renderFrame();
+    syncPlayButtons();   // F-1：随阶段显隐/切图标（内部有变化检测，每帧调用无开销）
   }
 
   function frame(now) {

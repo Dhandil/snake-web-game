@@ -28,7 +28,7 @@
     .hud { font-size: 16px; color: #94a3b8; }
     .hud b { color: #5eead4; font-size: 20px; margin-left: 4px; }
     .header-right { display: flex; align-items: center; gap: 12px; }
-    .mute-btn {
+    .icon-btn {
       background: none;
       border: none;
       font-size: 20px;
@@ -104,7 +104,9 @@
       <h1>贪吃蛇</h1>
       <div class="header-right">
         <div class="hud">得分<b id="score">0</b><span id="highscore-wrap"> · 最高<b id="highscore">0</b></span></div>
-        <button id="mute-btn" class="mute-btn" type="button" aria-label="静音">🔊</button>
+        <button id="pause-btn" class="icon-btn" type="button" aria-label="暂停" hidden>⏸</button>
+        <button id="restart-btn" class="icon-btn" type="button" aria-label="重开" hidden>🔄</button>
+        <button id="mute-btn" class="icon-btn" type="button" aria-label="静音">🔊</button>
       </div>
     </header>
     <div class="stage">
